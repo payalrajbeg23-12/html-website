@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raahi - Live Bus Tracking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            text-align: center;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Welcome Screen Styles */
+        .welcome-screen {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .welcome-subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+        }
+
+        .search-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #e0e0e0;
+        }
+
+        .search-tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .search-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            transition: border-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .quick-access {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .quick-btn {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .quick-btn:hover {
+            border-color: #667eea;
+            background: #e8f0fe;
+            transform: translateY(-2px);
+        }
+
+        /* Main tracking interface */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .map-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        #map {
+            height: 400px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .location-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .bus-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .bus-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-radius: 15px;
+            background: #f8f9ff;
+            margin-bottom: 10px;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+            border-left: 4px solid #667eea;
+        }
+
+        .bus-item:hover {
+            transform: translateX(5px);
+            background: #e8f0fe;
+        }
+
+        .bus-info h3 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .bus-status {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .eta {
+            text-align: right;
+        }
+
+        .eta-time {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4caf50;
+        }
+
+        .distance {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .driver-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #4caf50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .status-offline {
+            background: #f44336;
+        }
+
+        .driver-status {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .next-stops {
+            margin-top: 20px;
+        }
+
+        .stop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stop-item:last-child {
+            border-bottom: none;
+        }
+
+        .stop-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stop-eta {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .no-buses {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-buses-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .tab-btn {
+                width: 200px;
+            }
+
+            .search-tabs {
+                flex-direction: column;
+            }
+
+            .quick-access {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1976d2;
+        }
+
+        .alert-success {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d2e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚌 Raahi</div>
+            <div class="tagline">Live Bus Tracking & Real-time Updates</div>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" id="user-tab-btn">Track Buses</button>
+            <button class="tab-btn" id="driver-tab-btn">Driver Login</button>
+        </div>
+
+        <!-- User Interface -->
+        <div id="user-tab" class="tab-content active">
+            <!-- Welcome/Search Screen -->
+            <div id="welcome-screen" class="welcome-screen">
+                <div class="welcome-title">Find Your Bus</div>
+                <div class="welcome-subtitle">Enter your bus stop or route to see live timings and locations</div>
+                
+                <div class="search-container">
+                    <div class="search-tabs">
+                        <button class="search-tab active" id="stop-tab">Bus Stop</button>
+                        <button class="search-tab" id="route-tab">Route Number</button>
+                    </div>
+
+                    <div id="stop-search">
+                        <input type="text" class="search-input" id="stopInput" placeholder="Enter bus stop name (e.g., Central Station)">
+                    </div>
+
+                    <div id="route-search" style="display: none;">
+                        <input type="text" class="search-input" id="routeInput" placeholder="Enter route number (e.g., 101, 205)">
+                    </div>
+
+                    <button class="search-btn" id="searchBtn">🔍 Find Buses</button>
+                </div>
+
+                <div class="quick-access">
+                    <div class="quick-btn" data-search="Central Station">
+                        <div style="font-size: 1.5rem; margin-bottom: 5px;">🚏</div>
+                        <div>Central Station</div>
+                    </div>
+                    <div class="quick-btn" data-search="Airport">
+                        <div style="font-size: 1.5rem; margin-bottom: 5px;">✈️</div>
+                        <div>Airport</div>
+                    </div>
+                    <div class="quick-btn" data-search="University">
+                        <div style="font-size: 1.5rem; margin-bottom: 5px;">🎓</div>
+                        <div>University</div>
+                    </div>
+                    <div class="quick-btn" data-search="Mall">
+                        <div style="font-size: 1.5rem; margin-bottom: 5px;">🛒</div>
+                        <div>Mall</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Tracking Interface -->
+            <div id="tracking-interface" style="display: none;">
+                <div class="main-content">
+                    <div class="map-section">
+                        <button class="back-btn" id="backBtn">← Back to Search</button>
+                        <div class="location-header">
+                            <h2 id="selectedLocation">Search Results</h2>
+                            <p>Live bus locations and timings</p>
+                        </div>
+                        <div id="map"></div>
+                    </div>
+
+                    <div class="info-panel">
+                        <h2 style="margin-bottom: 15px; color: #667eea;">Upcoming Buses</h2>
+                        <div class="bus-list" id="busList">
+                            <!-- Buses will be populated based on search -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <h3 style="color: #667eea; margin-bottom: 15px;" id="nextStopsTitle">Next Stops</h3>
+                    <div class="next-stops" id="nextStopsList">
+                        <p style="text-align: center; color: #666;">Select a bus to see next stops</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Driver Interface -->
+        <div id="driver-tab" class="tab-content">
+            <div id="driver-login" class="driver-panel">
+                <h2 style="text-align: center; margin-bottom: 30px; color: #667eea;">Driver Login</h2>
+                
+                <div class="form-group">
+                    <label for="driverId">Driver ID</label>
+                    <input type="text" id="driverId" placeholder="Enter your driver ID">
+                </div>
+                
+                <div class="form-group">
+                    <label for="busNumber">Bus Number</label>
+                    <input type="text" id="busNumber" placeholder="Enter bus number">
+                </div>
+                
+                <div class="form-group">
+                    <label for="routeSelect">Select Route</label>
+                    <select id="routeSelect">
+                        <option value="">Choose a route</option>
+                        <option value="101">Route 101 - City Center</option>
+                        <option value="205">Route 205 - Airport Express</option>
+                        <option value="340">Route 340 - University Line</option>
+                        <option value="150">Route 150 - Mall Connect</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary" id="loginBtn">Start Tracking</button>
+                
+                <div style="margin-top: 15px; text-align: center; font-size: 0.9rem; color: #666;">
+                    <p>Demo: Enter any values and select a route</p>
+                </div>
+            </div>
+
+            <div id="driver-dashboard" class="driver-panel" style="display: none;">
+                <h2 style="text-align: center; margin-bottom: 20px; color: #667eea;">Driver Dashboard</h2>
+                
+                <div class="alert alert-success">
+                    <strong>GPS Tracking Active!</strong> Your location is being shared with passengers.
+                </div>
+                
+                <div style="background: #f0f8ff; border-radius: 10px; padding: 15px; margin: 15px 0;">
+                    <h3>Current Details:</h3>
+                    <p><strong>Driver ID:</strong> <span id="currentDriver">-</span></p>
+                    <p><strong>Bus Number:</strong> <span id="currentBus">-</span></p>
+                    <p><strong>Route:</strong> <span id="currentRoute">-</span></p>
+                </div>
+
+                <div class="driver-status">
+                    <div style="font-size: 1.2rem; margin-bottom: 10px;">
+                        <span class="status-indicator status-online"></span>
+                        <strong>Status: Online & Tracking</strong>
+                    </div>
+                    <p>Location updates every 5 seconds</p>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" id="updateLocationBtn" style="margin-bottom: 10px;">
+                        📍 Update Location Now
+                    </button>
+                    <button class="btn btn-danger" id="stopTrackingBtn">
+                        🛑 Stop Tracking
+                    </button>
+                </div>
+
+                <div class="alert alert-info" style="margin-top: 20px;">
+                    <strong>Next Stop:</strong> Central Station (3 minutes)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Global variables
+        let map = null;
+        let busMarkers = {};
+        let currentSearchType = 'stop';
+        let isDriverMode = false;
+        let trackingInterval = null;
+
+        // Sample data
+        const busData = {
+            'Central Station': [
+                { id: 'bus1', route: 'Route 101 - City Center', eta: 3, distance: 1.2, passengers: 32, status: 'online', position: [28.6139, 77.2090] },
+                { id: 'bus4', route: 'Route 150 - Mall Connect', eta: 12, distance: 4.5, passengers: 45, status: 'online', position: [28.6456, 77.2398] }
+            ],
+            'Airport': [
+                { id: 'bus2', route: 'Route 205 - Airport Express', eta: 7, distance: 2.8, passengers: 18, status: 'online', position: [28.6289, 77.2234] }
+            ],
+            'University': [
+                { id: 'bus3', route: 'Route 340 - University Line', eta: null, distance: null, passengers: null, status: 'offline', position: [28.5984, 77.1996] }
+            ],
+            'Mall': [
+                { id: 'bus4b', route: 'Route 150 - Mall Connect', eta: 8, distance: 3.1, passengers: 38, status: 'online', position: [28.6356, 77.2298] }
+            ],
+            '101': [
+                { id: 'bus1', route: 'Route 101 - City Center', eta: 3, distance: 1.2, passengers: 32, status: 'online', position: [28.6139, 77.2090] },
+                { id: 'bus1b', route: 'Route 101 - City Center', eta: 18, distance: 6.8, passengers: 28, status: 'online', position: [28.6089, 77.1890] }
+            ],
+            '205': [
+                { id: 'bus2', route: 'Route 205 - Airport Express', eta: 7, distance: 2.8, passengers: 18, status: 'online', position: [28.6289, 77.2234] },
+                { id: 'bus2b', route: 'Route 205 - Airport Express', eta: 25, distance: 8.2, passengers: 12, status: 'online', position: [28.6189, 77.2134] }
+            ],
+            '340': [
+                { id: 'bus3', route: 'Route 340 - University Line', eta: null, distance: null, passengers: null, status: 'offline', position: [28.5984, 77.1996] }
+            ],
+            '150': [
+                { id: 'bus4', route: 'Route 150 - Mall Connect', eta: 12, distance: 4.5, passengers: 45, status: 'online', position: [28.6456, 77.2398] },
+                { id: 'bus4b', route: 'Route 150 - Mall Connect', eta: 22, distance: 7.1, passengers: 38, status: 'online', position: [28.6356, 77.2298] }
+            ]
+        };
+
+        const nextStopsData = {
+            'Route 101 - City Center': [
+                { name: 'Central Station', eta: 3 },
+                { name: 'Main Market', eta: 8 },
+                { name: 'City Hospital', eta: 15 },
+                { name: 'Tech Park', eta: 22 }
+            ],
+            'Route 205 - Airport Express': [
+                { name: 'Airport Terminal', eta: 7 },
+                { name: 'Metro Station', eta: 12 },
+                { name: 'Hotel District', eta: 18 },
+                { name: 'City Center', eta: 25 }
+            ],
+            'Route 340 - University Line': [
+                { name: 'University Gate', eta: null },
+                { name: 'Student Hostel', eta: null },
+                { name: 'Library', eta: null },
+                { name: 'Sports Complex', eta: null }
+            ],
+            'Route 150 - Mall Connect': [
+                { name: 'Shopping Mall', eta: 12 },
+                { name: 'Food Court', eta: 17 },
+                { name: 'Cinema Complex', eta: 23 },
+                { name: 'Parking Area', eta: 28 }
+            ]
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            console.log('App initialized successfully');
+        });
+
+        function initializeEventListeners() {
+            // Tab switching
+            document.getElementById('user-tab-btn').addEventListener('click', () => switchTab('user'));
+            document.getElementById('driver-tab-btn').addEventListener('click', () => switchTab('driver'));
+
+            // Search tabs
+            document.getElementById('stop-tab').addEventListener('click', () => switchSearchTab('stop'));
+            document.getElementById('route-tab').addEventListener('click', () => switchSearchTab('route'));
+
+            // Search functionality
+            document.getElementById('searchBtn').addEventListener('click', performSearch);
+            document.getElementById('stopInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+            document.getElementById('routeInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+
+            // Quick access buttons
+            document.querySelectorAll('.quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const searchTerm = btn.getAttribute('data-search');
+                    quickSearch(searchTerm);
+                });
+            });
+
+            // Back button
+            document.getElementById('backBtn').addEventListener('click', goBack);
+
+            // Driver login
+            document.getElementById('loginBtn').addEventListener('click', handleDriverLogin);
+            document.getElementById('updateLocationBtn').addEventListener('click', updateLocation);
+            document.getElementById('stopTrackingBtn').addEventListener('click', stopTracking);
+        }
+
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tab + '-tab-btn').classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tab + '-tab').classList.add('active');
+
+            if (tab === 'user') {
+                // Reset to welcome screen
+                document.getElementById('welcome-screen').style.display = 'block';
+                document.getElementById('tracking-interface').style.display = 'none';
+            }
+
+            console.log('Switched to tab:', tab);
+        }
+
+        function switchSearchTab(type) {
+            currentSearchType = type;
+            
+            // Update search tab buttons
+            document.querySelectorAll('.search-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(type + '-tab').classList.add('active');
+
+            // Toggle search inputs
+            document.getElementById('stop-search').style.display = type === 'stop' ? 'block' : 'none';
+            document.getElementById('route-search').style.display = type === 'route' ? 'block' : 'none';
+
+            console.log('Search type changed to:', type);
+        }
+
+        function performSearch() {
+            const input = currentSearchType === 'stop' ? 
+                document.getElementById('stopInput').value.trim() : 
+                document.getElementById('routeInput').value.trim();
+
+            console.log('Performing search:', { type: currentSearchType, query: input });
+
+            if (!input) {
+                alert('Please enter a ' + (currentSearchType === 'stop' ? 'bus stop' : 'route number'));
+                return;
+            }
+
+            showBusResults(input);
+        }
+
+        function quickSearch(query) {
+            console.log('Quick search for:', query);
+            currentSearchType = 'stop';
+            showBusResults(query);
+        }
+
+        function showBusResults(query) {
+            console.log('Showing results for:', query);
+            
+            // Hide welcome screen, show tracking interface
+            document.getElementById('welcome-screen').style.display = 'none';
+            document.getElementById('tracking-interface').style.display = 'block';
+
+            // Update header
+            document.getElementById('selectedLocation').textContent = query;
+
+            // Initialize map if needed
+            if (!map) {
+                setTimeout(() => {
+                    initMap();
+                    loadBusData(query);
+                }, 200);
+            } else {
+                loadBusData(query);
+            }
+        }
+
+        function initMap() {
+            console.log('Initializing map...');
+            try {
+                map = L.map('map').setView([28.6139, 77.2090], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                console.log('Map initialized successfully');
+            } catch (error) {
+                console.error('Map initialization failed:', error);
+            }
+        }
+
+        function loadBusData(query) {
+            console.log('Loading bus data for:', query);
+            
+            const busList = document.getElementById('busList');
+            
+            // Find buses - exact match first
+            let buses = busData[query] || [];
+            
+            // If no exact match, try partial matching for stops
+            if (buses.length === 0 && currentSearchType === 'stop') {
+                const queryLower = query.toLowerCase();
+                for (const [key, value] of Object.entries(busData)) {
+                    if (key.toLowerCase().includes(queryLower) && isNaN(key)) {
+                        buses = value;
+                        break;
+                    }
+                }
+            }
+            
+            // For route numbers, extract digits
+            if (buses.length === 0 && currentSearchType === 'route') {
+                const routeNum = query.replace(/\D/g, '');
+                buses = busData[routeNum] || [];
+            }
+
+            console.log('Found buses:', buses.length);
+
+            if (buses.length === 0) {
+                busList.innerHTML = `
+                    <div class="no-buses">
+                        <div class="no-buses-icon">😔</div>
+                        <h3>No buses found</h3>
+                        <p>No buses currently available for "${query}"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Clear existing markers
+            if (map) {
+                Object.values(busMarkers).forEach(marker => map.removeLayer(marker));
+                busMarkers = {};
+            }
+
+            // Populate bus list
+            busList.innerHTML = buses.map(bus => `
+                <div class="bus-item" onclick="focusBus('${bus.id}')">
+                    <div class="bus-info">
+                        <h3>${bus.route}</h3>
+                        <div class="bus-status">
+                            <span class="status-indicator ${bus.status === 'online' ? 'status-online' : 'status-offline'}"></span>
+                            ${bus.status === 'online' ? `Online • ${bus.passengers} passengers` : 'Offline • Last seen 5 min ago'}
+                        </div>
+                    </div>
+                    <div class="eta">
+                        <div class="eta-time">${bus.eta ? bus.eta + ' min' : '--'}</div>
+                        <div class="distance">${bus.distance ? bus.distance + ' km away' : 'Unknown'}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add markers to map
+            if (map) {
+                buses.forEach(bus => {
+                    const icon = L.divIcon({
+                        html: `<div style="background: ${bus.status === 'online' ? '#4caf50' : '#f44336'}; 
+                                       width: 20px; height: 20px; border-radius: 50%; 
+                                       border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+                               </div>`,
+                        iconSize: [20, 20],
+                        className: 'bus-marker'
+                    });
+
+                    const marker = L.marker(bus.position, { icon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div style="text-align: center;">
+                                <strong>${bus.route}</strong><br>
+                                Status: ${bus.status}<br>
+                                ${bus.eta ? `ETA: ${bus.eta} min` : 'Offline'}<br>
+                                <small>Bus ID: ${bus.id}</small>
+                            </div>
+                        `);
+
+                    busMarkers[bus.id] = marker;
+                });
+
+                // Fit map to show all buses
+                if (buses.length > 0) {
+                    const group = new L.featureGroup(Object.values(busMarkers));
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+
+            // Show next stops for first bus
+            if (buses.length > 0) {
+                updateNextStops(buses[0].route);
+            }
+        }
+
+        function focusBus(busId) {
+            console.log('Focusing on bus:', busId);
+            if (busMarkers[busId] && map) {
+                const marker = busMarkers[busId];
+                map.setView(marker.getLatLng(), 15);
+                marker.openPopup();
+
+                // Update next stops for this bus
+                const allBuses = Object.values(busData).flat();
+                const bus = allBuses.find(b => b.id === busId);
+                if (bus) {
+                    updateNextStops(bus.route);
+                }
+            }
+        }
+
+        function updateNextStops(route) {
+            console.log('Updating next stops for:', route);
+            const nextStopsList = document.getElementById('nextStopsList');
+            const nextStopsTitle = document.getElementById('nextStopsTitle');
+            
+            const stops = nextStopsData[route] || [];
+            nextStopsTitle.textContent = `Next Stops - ${route}`;
+
+            if (stops.length === 0) {
+                nextStopsList.innerHTML = '<p style="text-align: center; color: #666;">No stops information available</p>';
+                return;
+            }
+
+            nextStopsList.innerHTML = stops.map(stop => `
+                <div class="stop-item">
+                    <span class="stop-name">${stop.name}</span>
+                    <span class="stop-eta">${stop.eta ? stop.eta + ' min' : '--'}</span>
+                </div>
+            `).join('');
+        }
+
+        function goBack() {
+            console.log('Going back to search');
+            document.getElementById('welcome-screen').style.display = 'block';
+            document.getElementById('tracking-interface').style.display = 'none';
+            
+            // Clear inputs
+            document.getElementById('stopInput').value = '';
+            document.getElementById('routeInput').value = '';
+        }
+
+        // Driver functions
+        function handleDriverLogin() {
+            console.log('Driver login attempt...');
+            
+            const driverId = document.getElementById('driverId').value.trim();
+            const busNumber = document.getElementById('busNumber').value.trim();
+            const routeSelect = document.getElementById('routeSelect');
+            const route = routeSelect.value;
+
+            console.log('Login data:', { driverId, busNumber, route });
+
+            if (!driverId || !busNumber || !route) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                const routeText = routeSelect.options[routeSelect.selectedIndex].text;
+
+                // Update dashboard
+                document.getElementById('currentDriver').textContent = driverId;
+                document.getElementById('currentBus').textContent = busNumber;
+                document.getElementById('currentRoute').textContent = routeText;
+
+                // Switch to dashboard
+                document.getElementById('driver-login').style.display = 'none';
+                document.getElementById('driver-dashboard').style.display = 'block';
+
+                console.log('Driver login successful');
+                startLocationTracking();
+            } catch (error) {
+                console.error('Driver login error:', error);
+                alert('Login failed. Please try again.');
+            }
+        }
+
+        function startLocationTracking() {
+            console.log('Starting location tracking...');
+            isDriverMode = true;
+
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        console.log('Initial location obtained:', position.coords.latitude, position.coords.longitude);
+                        updateDriverLocation(position);
+                    },
+                    (error) => {
+                        console.error('Geolocation error:', error);
+                        alert('Unable to get location. Using demo mode.');
+                    }
+                );
+
+                // Set up periodic updates
+                trackingInterval = setInterval(() => {
+                    if (isDriverMode) {
+                        navigator.geolocation.getCurrentPosition(updateDriverLocation, handleLocationError);
+                    }
+                }, 5000);
+            } else {
+                alert("Geolocation not supported. Using demo mode.");
+            }
+        }
+
+        function updateDriverLocation(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            console.log(`Driver location: ${lat}, ${lng}`);
+            
+            // In real app, send to server
+            const locationData = {
+                driverId: document.getElementById('currentDriver').textContent,
+                busNumber: document.getElementById('currentBus').textContent,
+                latitude: lat,
+                longitude: lng,
+                timestamp: new Date().toISOString()
+            };
+            
+            console.log('Would send to server:', locationData);
+        }
+
+        function handleLocationError(error) {
+            console.error('Location error:', error.message);
+        }
+
+        function updateLocation() {
+            console.log('Manual location update requested');
+            if (isDriverMode && "geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(updateDriverLocation, handleLocationError);
+                
+                // Visual feedback
+                const btn = document.getElementById('updateLocationBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '📍 Location Updated!';
+                btn.style.background = '#4caf50';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            }
+        }
+
+        function stopTracking() {
+            console.log('Stopping tracking...');
+            isDriverMode = false;
+            
+            if (trackingInterval) {
+                clearInterval(trackingInterval);
+                trackingInterval = null;
+            }
+            
+            // Reset to login form
+            document.getElementById('driver-login').style.display = 'block';
+            document.getElementById('driver-dashboard').style.display = 'none';
+            
+            // Clear form
+            document.getElementById('driverId').value = '';
+            document.getElementById('busNumber').value = '';
+            document.getElementById('routeSelect').value = '';
+        }
+
+        // Real-time updates simulation
+        setInterval(() => {
+            // Update ETAs
+            document.querySelectorAll('.eta-time').forEach(eta => {
+                if (eta.textContent !== '--' && eta.textContent !== '') {
+                    let currentTime = parseInt(eta.textContent);
+                    if (!isNaN(currentTime) && currentTime > 1) {
+                        eta.textContent = (currentTime - 1) + ' min';
+                    } else if (!isNaN(currentTime) && currentTime <= 1) {
+                        eta.textContent = Math.floor(Math.random() * 15 + 1) + ' min';
+                    }
+                }
+            });
+
+            // Update next stops ETAs
+            document.querySelectorAll('.stop-eta').forEach(eta => {
+                if (eta.textContent !== '--' && eta.textContent !== '') {
+                    let currentTime = parseInt(eta.textContent);
+                    if (!isNaN(currentTime) && currentTime > 1) {
+                        eta.textContent = (currentTime - 1) + ' min';
+                    }
+                }
+            });
+        }, 10000); // Every 10 seconds
+
+        console.log('All scripts loaded successfully');
+    </script>
+</body>
+</html>
